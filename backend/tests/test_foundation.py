@@ -20,6 +20,17 @@ def test_officer_login_and_protected_cases(tmp_path, monkeypatch):
             response = await client.get('/api/applications')
             assert response.status_code == 200
             assert len(response.json()['applications']) == 12
+            detail = await client.get('/api/applications/1')
+            assert detail.status_code == 200
+            assert len(detail.json()['documents']) == 3
+            invalid = await client.post('/api/applications/1/decision', json={'action':'approved','reason':'','language':'en','expected_revision':0})
+            assert invalid.status_code == 422
+            decision = await client.post('/api/applications/1/decision', json={'action':'returned','reason':'Please clarify income','language':'en','expected_revision':0})
+            assert decision.status_code == 200
+            again = await client.post('/api/applications/1/decision', json={'action':'approved','reason':'Reviewed','language':'en','expected_revision':0})
+            assert again.status_code == 409
+            assert (await client.get('/api/applications/1')).json()['status'] == 'returned'
+            assert len((await client.get('/api/decisions')).json()) == 1
             assert (await client.post('/api/auth/logout')).status_code == 200
             assert (await client.get('/api/applications')).status_code == 401
     asyncio.run(exercise())
