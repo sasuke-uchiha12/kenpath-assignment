@@ -71,6 +71,10 @@ Requirements: Python 3.13, Node.js 22+, npm. Commands below assume a Unix shell 
 
 For a single-service production-style run, first run `npm ci && npm run build` inside `frontend`, set `APP_ORIGIN` to the backend origin (for example `http://localhost:8000`), then run the backend without Vite. FastAPI serves the built React app from `/`.
 
+### Neon PostgreSQL
+
+The optional `neon.ts` configuration declares a Postgres-only Neon project. The root `npm run build` runs the frontend build. After installing root dependencies with `npm ci`, link a Neon project with the Neon CLI and run `neon deploy`; keep the generated `.neon` and `.env.local` files private. Neon supplies a pooled `DATABASE_URL` for application requests and `DATABASE_URL_UNPOOLED` for migrations. Alembic uses the direct URL when it is set, and otherwise uses `DATABASE_URL` (for example, local SQLite). Existing app settings such as the officer login and Gemini API key must also be present in the environment.
+
 ## Testing
 
 ```bash
@@ -86,7 +90,7 @@ The backend tests exercise login, protected routes, sample data, decisions, stal
 
 ## Deployment
 
-`Dockerfile` builds the React app and serves it from FastAPI. Configure a persistent PostgreSQL `DATABASE_URL` and the environment variables in `.env.example` on a Docker-capable host. Configure `COOKIE_SECURE=true`, a unique strong `SESSION_SECRET`, your public HTTPS origin in `APP_ORIGIN`, a demo officer username and password hash, and a server-side Gemini key. The container applies migrations and runs the idempotent seed on startup. Do not use local container SQLite for a hosted instance: the filesystem can be ephemeral.
+`Dockerfile` builds the React app and serves it from FastAPI. Configure a persistent PostgreSQL `DATABASE_URL` and the environment variables in `.env.example` on a Docker-capable host. With Neon, also set `DATABASE_URL_UNPOOLED` so Alembic uses a direct connection. Configure `COOKIE_SECURE=true`, a unique strong `SESSION_SECRET`, your public HTTPS origin in `APP_ORIGIN`, a demo officer username and password hash, and a server-side Gemini key. The container applies migrations and runs the idempotent seed on startup. Do not use local container SQLite for a hosted instance: the filesystem can be ephemeral.
 
 Example hosts include Render for the Docker web service and Neon for PostgreSQL. Account setup and free-tier availability vary. Deploy from `0.1.1-dev`, then verify login, both languages, a real AI review, an officer decision, and persistence after reload. Share the live URL and demo officer credentials privately with the hiring team.
 
