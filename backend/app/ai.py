@@ -5,6 +5,8 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
+
 
 class Translation(BaseModel):
     summary: str = Field(min_length=1)
@@ -35,7 +37,7 @@ def generate(evidence: dict) -> dict:
         + json.dumps(evidence, ensure_ascii=False)
     )
     response = client.models.generate_content(
-        model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+        model=os.getenv("GEMINI_MODEL", DEFAULT_MODEL),
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",

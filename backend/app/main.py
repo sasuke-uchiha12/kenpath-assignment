@@ -314,7 +314,7 @@ def review_case(case_id: int, username: str = Depends(officer)):
                 review = AIReview(
                     application_id=case_id,
                     evidence_hash=digest,
-                    model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+                    model=os.getenv("GEMINI_MODEL", ai.DEFAULT_MODEL),
                     output=output,
                 )
                 session.add(review)
@@ -322,7 +322,7 @@ def review_case(case_id: int, username: str = Depends(officer)):
                 review.evidence_hash, review.output, review.model = (
                     digest,
                     output,
-                    os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+                    os.getenv("GEMINI_MODEL", ai.DEFAULT_MODEL),
                 )
                 review.created_at = datetime.now(timezone.utc)
             session.commit()

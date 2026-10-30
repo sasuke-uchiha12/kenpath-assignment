@@ -78,6 +78,7 @@ def test_officer_login_and_protected_cases(tmp_path, monkeypatch):
             monkeypatch.setenv("GEMINI_API_KEY", "test-only")
             review = await client.post("/api/applications/2/ai-review")
             assert review.status_code == 200
+            assert review.json()["model"] == "gemini-3.5-flash-lite"
             assert review.json()["output"]["en"]["summary"] == "Income evidence missing"
             monkeypatch.setattr(
                 ai,
