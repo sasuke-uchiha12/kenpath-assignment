@@ -130,3 +130,45 @@ def decision_history(username: str = Depends(officer)):
     with db.Session() as session:
         rows = session.execute(select(Decision,Application).join(Application,Decision.application_id==Application.id).order_by(Decision.created_at.desc())).all()
         return [{'id':d.id,'application_id':a.id,'reference':a.reference,'applicant':a.applicant,'action':d.action,'reason':d.reason,'language':d.language,'officer':d.officer,'created_at':d.created_at.isoformat()} for d,a in rows]
+
+import hashlib
+import json
+import threading
+from . import ai
+
+review_locks = defaultdict(threading.Lock)
+
+@app.post('/api/applications/{case_id}/ai-review')
+def review_case(case_id: int, username: str = Depends(officer)):
+    with review_locks[case_id]:
+        with db.Session() as session:
+            a = session.get(Application, case_id)
+            if not a:
+                raise HTTPException(404, 'case_not_found')
+            documents = session.scalars(select(Document).where(Document.application_id==case_id)).all()
+            evidence = {'application':case_dict(a),'documents':[{'id':d.id,'kind':d.kind,'content':d.content} for d in documents]}
+            # Decision state does not change the submitted evidence.
+            for key in ('status','revision','age','overdue'):
+                evidence['application'].pop(key, None)
+            digest = hashlib.sha256(json.dumps(evidence,sort_keys=True).encode()).hexdigest()
+            existing = session.scalar(select(AIReview).where(AIReview.application_id==case_id))
+            if existing and existing.evidence_hash == digest:
+                return {'output':existing.output,'model':existing.model,'created_at':existing.created_at.isoformat()}
+        if not os.getenv('GEMINI_API_KEY'):
+            raise HTTPException(503, 'ai_not_configured')
+        try:
+            output = ai.Review.model_validate(ai.generate(evidence)).model_dump()
+            if not set(output['evidence_ids']).issubset({d['id'] for d in evidence['documents']}):
+                raise ValueError('invalid_evidence_reference')
+        except Exception:
+            raise HTTPException(503, 'ai_unavailable')
+        with db.Session() as session:
+            review = session.scalar(select(AIReview).where(AIReview.application_id==case_id))
+            if review is None:
+                review = AIReview(application_id=case_id, evidence_hash=digest, model=os.getenv('GEMINI_MODEL','gemini-2.5-flash'), output=output)
+                session.add(review)
+            else:
+                review.evidence_hash, review.output, review.model = digest, output, os.getenv('GEMINI_MODEL','gemini-2.5-flash')
+                review.created_at = datetime.now(timezone.utc)
+            session.commit()
+            return {'output':review.output,'model':review.model,'created_at':review.created_at.isoformat()}

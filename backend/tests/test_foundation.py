@@ -20,6 +20,16 @@ def test_officer_login_and_protected_cases(tmp_path, monkeypatch):
             response = await client.get('/api/applications')
             assert response.status_code == 200
             assert len(response.json()['applications']) == 12
+            assert (await client.post('/api/applications/2/ai-review')).status_code == 503
+            from app import ai
+            valid = {'suggested_action':'returned','evidence_ids':[20,21], 'en':{'summary':'Income evidence missing','missing_documents':['Income evidence'],'inconsistencies':[],'reasons':['Please provide evidence'],'questions':[]}, 'ta':{'summary':'வருமானச் சான்று இல்லை','missing_documents':['வருமானச் சான்று'],'inconsistencies':[],'reasons':['சான்றை வழங்கவும்'],'questions':[]}}
+            monkeypatch.setattr(ai, 'generate', lambda evidence: valid)
+            monkeypatch.setenv('GEMINI_API_KEY', 'test-only')
+            review = await client.post('/api/applications/2/ai-review')
+            assert review.status_code == 200
+            assert review.json()['output']['en']['summary'] == 'Income evidence missing'
+            monkeypatch.setattr(ai, 'generate', lambda evidence: (_ for _ in ()).throw(RuntimeError('should use cache')))
+            assert (await client.post('/api/applications/2/ai-review')).status_code == 200
             detail = await client.get('/api/applications/1')
             assert detail.status_code == 200
             assert len(detail.json()['documents']) == 3
