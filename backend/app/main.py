@@ -295,8 +295,17 @@ def review_case(case_id: int, username: str = Depends(officer)):
                 {d["id"] for d in evidence["documents"]}
             ):
                 raise ValueError("invalid_evidence_reference")
-        except Exception:
-            raise HTTPException(503, "ai_unavailable")
+        except Exception as exc:
+            # Do not return or log provider messages: they may contain secrets.
+            code = getattr(exc, "code", None)
+            detail = {
+                400: "ai_provider_request_error",
+                401: "ai_provider_auth_error",
+                403: "ai_provider_permission_error",
+                404: "ai_model_not_available",
+                429: "ai_quota_exceeded",
+            }.get(code, "ai_unavailable")
+            raise HTTPException(503, detail) from None
         with db.Session() as session:
             review = session.scalar(
                 select(AIReview).where(AIReview.application_id == case_id)

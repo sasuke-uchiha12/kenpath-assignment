@@ -95,6 +95,18 @@ def test_officer_login_and_protected_cases(tmp_path, monkeypatch):
             assert (
                 await client.post("/api/applications/3/ai-review")
             ).status_code == 503
+
+            class ProviderError(Exception):
+                code = 400
+
+            def reject_request(evidence):
+                raise ProviderError("private upstream message")
+
+            monkeypatch.setattr(ai, "generate", reject_request)
+            failed = await client.post("/api/applications/4/ai-review")
+            assert failed.status_code == 503
+            assert failed.json()["detail"] == "ai_provider_request_error"
+            assert "private upstream message" not in failed.text
             detail = await client.get("/api/applications/1")
             assert detail.status_code == 200
             assert len(detail.json()["documents"]) == 3
