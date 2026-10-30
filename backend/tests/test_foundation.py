@@ -89,11 +89,16 @@ def test_officer_login_and_protected_cases(tmp_path, monkeypatch):
             assert (
                 await client.post("/api/applications/2/ai-review")
             ).status_code == 200
-            monkeypatch.setattr(ai, "generate", lambda evidence: {**valid, "evidence_ids": [999]})
-            assert (await client.post("/api/applications/3/ai-review")).status_code == 503
+            monkeypatch.setattr(
+                ai, "generate", lambda evidence: {**valid, "evidence_ids": [999]}
+            )
+            assert (
+                await client.post("/api/applications/3/ai-review")
+            ).status_code == 503
             detail = await client.get("/api/applications/1")
             assert detail.status_code == 200
             assert len(detail.json()["documents"]) == 3
+            assert "கற்பனை" in detail.json()["documents"][0]["content_ta"]
             invalid = await client.post(
                 "/api/applications/1/decision",
                 json={

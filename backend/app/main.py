@@ -159,7 +159,13 @@ def case_detail(case_id: int, username: str = Depends(officer)):
         )
         result = case_dict(a)
         result["documents"] = [
-            {"id": d.id, "kind": d.kind, "title": d.title, "content": d.content}
+            {
+                "id": d.id,
+                "kind": d.kind,
+                "title": d.title,
+                "content": d.content,
+                "content_ta": d.content_ta,
+            }
             for d in docs
         ]
         result["ai_review"] = (

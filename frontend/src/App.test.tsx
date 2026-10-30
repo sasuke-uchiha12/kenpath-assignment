@@ -7,7 +7,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import App from "./App";
 
 afterEach(() => {
@@ -43,11 +43,11 @@ it("keeps an unfinished officer note when switching languages", async () => {
         url.endsWith("/auth/me") ? { username: "officer" } : record,
     })),
   );
-  render(
-    <MemoryRouter initialEntries={["/applications/1"]}>
-      <App />
-    </MemoryRouter>,
-  );
+  const router = createMemoryRouter([{ path: "*", element: <App /> }], {
+    initialEntries: ["/", "/applications/1"],
+    initialIndex: 1,
+  });
+  render(<RouterProvider router={router} />);
   const note = await screen.findByLabelText("Decision reason");
   fireEvent.change(note, { target: { value: "Please provide proof" } });
   fireEvent.click(screen.getByRole("button", { name: "தமிழ்" }));
@@ -57,7 +57,15 @@ it("keeps an unfinished officer note when switching languages", async () => {
         .value,
     ).toBe("Please provide proof"),
   );
-  vi.spyOn(window, "confirm").mockReturnValue(false);
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
   fireEvent.click(screen.getByRole("link", { name: "முடிவு வரலாறு" }));
   expect(screen.getByLabelText("முடிவிற்கான காரணம்")).toBeTruthy();
+  await router.navigate(-1);
+  await waitFor(() => expect(confirm).toHaveBeenCalledTimes(2));
+  expect(screen.getByLabelText("முடிவிற்கான காரணம்")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "வெளியேறு" }));
+  expect(confirm).toHaveBeenCalledTimes(3);
+  await waitFor(() =>
+    expect(screen.getByLabelText("முடிவிற்கான காரணம்")).toBeTruthy(),
+  );
 });
