@@ -17,7 +17,7 @@ The example is inspired by Tamil Nadu's [e-Sevai income certificate service (REV
 - An officer chooses approve, reject, or return for correction, confirms a reason, and can view decision history. A revision check prevents conflicting decisions.
 - Manual review and decisions remain available if AI is unavailable. The application does not substitute generated or canned text for a live AI response.
 
-Tamil translations are machine-prepared draft copy and have not been reviewed by a fluent reader. Applicant names and fictional submitted evidence remain in their original language.
+Tamil translations are machine-prepared draft copy and have not been reviewed by a fluent reader. Fictional sample evidence includes an English original and a draft Tamil rendering; names and address values remain as submitted.
 
 ## Technical decisions
 
@@ -57,7 +57,7 @@ Requirements: Python 3.13, Node.js 22+, npm. Commands below assume a Unix shell 
    ../.venv/bin/uvicorn app.main:app --reload --port 8000
    ```
 
-   Seeding is idempotent: it inserts missing sample cases without resetting existing decisions. AI calls show an error when no Gemini key is configured, while manual decisions still work.
+   Seeding is idempotent: it inserts missing sample cases and fills missing Tamil sample text without resetting existing decisions. AI calls show an error when no Gemini key is configured, while manual decisions still work.
 
 4. In a second terminal:
 

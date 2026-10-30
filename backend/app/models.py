@@ -27,6 +27,7 @@ class Document(Base):
     kind: Mapped[str] = mapped_column(String(50))
     title: Mapped[str] = mapped_column(String(100))
     content: Mapped[str] = mapped_column(Text)
+    content_ta: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class Decision(Base):

@@ -6,6 +6,7 @@ import {
   Link,
   useNavigate,
   useParams,
+  useBlocker,
 } from "react-router-dom";
 import {
   ArrowLeft,
@@ -44,7 +45,13 @@ type Case = {
   ai_review?: Review | null;
   decision?: Decision | null;
 };
-type Doc = { id: number; kind: string; title: string; content: string };
+type Doc = {
+  id: number;
+  kind: string;
+  title: string;
+  content: string;
+  content_ta?: string | null;
+};
 type Translated = {
   summary: string;
   missing_documents: string[];
@@ -460,6 +467,7 @@ function CasePage({ t, language }: { t: T; language: Language }) {
   const [reason, setReason] = useState("");
   const [confirm, setConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const blocker = useBlocker(Boolean(reason.trim()));
   const load = () =>
     api<Case>("/applications/" + id)
       .then(setRecord)
@@ -475,21 +483,17 @@ function CasePage({ t, language }: { t: T; language: Language }) {
         e.returnValue = "";
       }
     };
-    const intercept = (event: MouseEvent) => {
-      const target = event.target as Element | null;
-      const link = target?.closest("a");
-      if (reason.trim() && link && !window.confirm(t("unsavedWarning"))) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    };
     window.addEventListener("beforeunload", warn);
-    document.addEventListener("click", intercept, true);
     return () => {
       window.removeEventListener("beforeunload", warn);
-      document.removeEventListener("click", intercept, true);
     };
   }, [reason, language]);
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      if (window.confirm(t("unsavedWarning"))) blocker.proceed();
+      else blocker.reset();
+    }
+  }, [blocker, language]);
   async function aiReview() {
     setAiBusy(true);
     setAiError(false);
@@ -528,11 +532,6 @@ function CasePage({ t, language }: { t: T; language: Language }) {
     }
   }
   function back() {
-    if (
-      reason.trim() &&
-      !window.confirm(t("unsavedWarning"))
-    )
-      return;
     navigate("/");
   }
   if (loading) return <p className="empty">{t("loading")}</p>;
@@ -617,7 +616,13 @@ function CasePage({ t, language }: { t: T; language: Language }) {
                   </div>
                   <div className="doc-body">
                     <strong>{docName(kind)}</strong>
-                    {doc && <p>{doc.content}</p>}
+                    {doc && (
+                      <p>
+                        {language === "ta" && doc.content_ta
+                          ? doc.content_ta
+                          : doc.content}
+                      </p>
+                    )}
                     {doc && (
                       <small>
                         #{doc.id} · {t("sample")}
@@ -890,6 +895,10 @@ export default function App() {
       .catch(() => setSession("out"));
   }, []);
   async function logout() {
+    const draft = document.querySelector<HTMLTextAreaElement>(
+      ".reason-label textarea",
+    )?.value;
+    if (draft?.trim() && !window.confirm(t("unsavedWarning"))) return;
     await api("/auth/logout", { method: "POST" });
     setSession("out");
   }

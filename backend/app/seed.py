@@ -19,10 +19,24 @@ NAMES = [
 DISTRICTS = ["Chennai", "Madurai", "Coimbatore", "Tiruchirappalli"]
 
 
+def tamil_sample(content: str) -> str:
+    return (
+        content.replace("Fictional identity record for ", "கற்பனை அடையாளப் பதிவு: ")
+        .replace("Fictional address:", "கற்பனை முகவரி:")
+        .replace("Fictional annual income statement:", "கற்பனை ஆண்டு வருமான விவரம்:")
+        .replace("per year.", "ஆண்டுக்கு.")
+    )
+
+
 def seed():
     with db.Session() as session:
         for index, name in enumerate(NAMES, 1):
             if session.get(Application, index):
+                # Fill missing translations for our own known sample documents only.
+                for pos in range(3):
+                    doc = session.get(Document, index * 10 + pos)
+                    if doc is not None and not doc.content_ta:
+                        doc.content_ta = tamil_sample(doc.content)
                 continue
             annual = 120000 + index * 12000
             missing = index in (2, 6, 10)
@@ -74,6 +88,7 @@ def seed():
                         kind=kind,
                         title=title,
                         content=content,
+                        content_ta=tamil_sample(content),
                     )
                 )
         session.commit()
