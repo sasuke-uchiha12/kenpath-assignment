@@ -2,6 +2,26 @@
 
 A bilingual demonstration workspace for an officer reviewing income certificate applications in Tamil Nadu. It brings a queue, fictional evidence, AI-assisted review, and a recorded officer decision together in one place. **All applicant information is fictional.** This is not a government service and does not issue certificates.
 
+**[Open the live demo](https://kenpath-assignment.onrender.com)** · [How to run locally](#run-locally) · [Technical decisions](#technical-decisions)
+
+The live demo requires an officer login. Contact the project owner for the demo credentials; hiring reviewers receive them separately. The free hosting service may take about a minute to wake after inactivity.
+
+## Project goal
+
+Help an officer work through income-certificate applications with a clear view of pending cases, supporting evidence, and AI-generated observations—while keeping the final decision with the officer.
+
+## How the demo works
+
+1. **Sign in and review the queue.** Search the fictional applications and see which are pending, overdue under the demo rule, or need attention.
+2. **Open an application.** Review the applicant's details, declared income, and sample supporting documents.
+3. **Request an AI review.** Gemini produces an English and Tamil summary, missing documents or inconsistencies, a suggested action, and reasons. A saved review is reused when the evidence is unchanged.
+4. **Record the officer's decision.** Select approve, reject, or return for correction; enter a reason and confirm. The AI does not make the decision.
+5. **Review the outcome.** The decision is saved and appears in Decision history. The language selector is available throughout the officer workflow.
+
+[Meena Selvam's sample application](https://kenpath-assignment.onrender.com/applications/3) shows an income discrepancy and a completed return-for-correction decision. Sign in before opening it. Demo data is shared, so application statuses can change as people explore the service. For a fresh AI review, open a pending application that has not yet been reviewed and select **Generate AI review**.
+
+The free Gemini API can be rate-limited or unavailable; officers can still review evidence and record decisions manually. The demo uses made-up records and must not be used with real citizen data.
+
 ## The problem
 
 When application details and supporting evidence are scattered across records, officers must spend time finding missing information and deciding which case to review next. Certificate Desk presents the oldest pending cases first and puts each application's supporting evidence next to an optional AI review. The officer remains responsible for checking the evidence and choosing the outcome.
@@ -22,6 +42,8 @@ Tamil translations are machine-prepared draft copy and have not been reviewed by
 ## Technical decisions
 
 React + TypeScript and Vite provide the interface. FastAPI exposes the same-origin API, serves the built interface, and keeps the Gemini API key server-side. SQLAlchemy stores data in SQLite for local development or PostgreSQL for deployment; Alembic initializes the schema. There is one configured demo officer, with a PBKDF2 password hash and signed, expiring HTTP-only session cookie. This is deliberately simpler than a production identity system. AI output is validated with Pydantic and evidence IDs are checked against the current case. The officer's decision is separate from the AI suggestion.
+
+The deployed demo runs the React interface and FastAPI backend together on Render, uses Neon PostgreSQL for persistent records, and calls Gemini from the backend. The source of truth for the deployed application is the `0.1.1-dev` branch.
 
 There is no citizen portal, OCR, actual government integration, certificate issuance, or automatic AI provider fallback. Sample documents are stored as text, not scanned or verified. Returned applications cannot be resubmitted in this demo. Never use real citizen information with this project.
 
