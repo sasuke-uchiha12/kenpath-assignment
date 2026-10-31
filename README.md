@@ -22,6 +22,16 @@ Help an officer work through income-certificate applications with a clear view o
 
 The free Gemini API can be rate-limited or unavailable; officers can still review evidence and record decisions manually. The demo uses made-up records and must not be used with real citizen data.
 
+## Screenshots
+
+**Application queue:** The officer can see pending cases and identify applications needing attention.
+
+![Application queue showing pending applications and attention indicators](docs/screenshots/application_queue.png)
+
+**Application review:** Submitted evidence, the AI review, and the officer's final decision appear together for a fictional case.
+
+![Application review showing sample evidence, AI findings, and the officer's decision](docs/screenshots/application_review.png)
+
 ## The problem
 
 When application details and supporting evidence are scattered across records, officers must spend time finding missing information and deciding which case to review next. Certificate Desk presents the oldest pending cases first and puts each application's supporting evidence next to an optional AI review. The officer remains responsible for checking the evidence and choosing the outcome.
